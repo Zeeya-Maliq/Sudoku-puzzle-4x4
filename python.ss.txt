@@ -1,0 +1,114 @@
+import random
+
+def generate_puzzle():
+    # Create solved 4x4 Sudoku
+    solved = [[0]*4 for _ in range(4)]
+    nums = [1,2,3,4]
+
+    # Fill diagonal 2x2 boxes first
+    for box in range(0,4,2):
+        random.shuffle(nums)
+        for i in range(2):
+            for j in range(2):
+                solved[box+i][box+j] = nums[i*2+j]
+
+    # Solve the rest
+    if not fill_sudoku(solved):
+        return generate_puzzle()  # Retry if couldn't solve
+
+    # Remove 10 numbers for puzzle
+    puzzle = [row[:] for row in solved]
+    empty_spaces = 0
+    while empty_spaces < 10:
+        r, c = random.randint(0,3), random.randint(0,3)
+        if puzzle[r][c] != 0:
+            puzzle[r][c] = 0
+            empty_spaces += 1
+
+    return puzzle, solved
+
+def fill_sudoku(board):
+    for i in range(4):
+        for j in range(4):
+            if board[i][j] == 0:
+                for num in random.sample([1,2,3,4],4):
+                    if valid_move(board, i, j, num):
+                        board[i][j] = num
+                        if fill_sudoku(board):
+                            return True
+                        board[i][j] = 0
+                return False
+    return True
+
+def valid_move(board, row, col, num):
+    # Check row and column
+    for i in range(4):
+        if board[row][i] == num or board[i][col] == num:
+            return False
+
+    # Check 2x2 box
+    box_row, box_col = row//2*2, col//2*2
+    for i in range(2):
+        for j in range(2):
+            if board[box_row+i][box_col+j] == num:
+                return False
+    return True
+
+def print_board(board):
+    print("\n  1 2   3 4")
+    print("  ---------")
+    for r in range(4):
+        print(r+1, end=" ")
+        for c in range(4):
+            val = board[r][c] if board[r][c] != 0 else "."
+            print(val, end=" ")
+            if c == 1:
+                print("|", end=" ")
+        print()
+        if r == 1:
+            print("  ---------")
+
+def play_game():
+    puzzle, solution = generate_puzzle()
+    attempts = 3
+
+    print("======<= 4x4 SUDOKU =<======")
+    print("Fill empty spots (.) with numbers 1-4")
+    print(f"You have {attempts} attempts. Good Luck mate!")
+    print("Enter moves as: row column number")
+    print("Example: 2 3 4  for row2,col3,number4")
+
+    while attempts > 0:
+        print_board(puzzle)
+        try:
+            move = input("\nYour move: ").split()
+            if len(move) == 3:
+                r, c, num = map(int, move)
+                r -= 1
+                c -= 1
+
+                if 0 <= r <= 3 and 0 <= c <= 3 and 1 <= num <= 4:
+                    if puzzle[r][c] == 0:
+                        if solution[r][c] == num:
+                            puzzle[r][c] = num
+                            if all(0 not in row for row in puzzle):
+                                print("\nYou just did it!  Congrats!")
+                                print_board(puzzle)
+                                return
+                        else:
+                            attempts -= 1
+                            print(f"Wrong! Attempts left: {attempts}")
+                    else:
+                        print("Can't change original number!")
+                else:
+                    print("Enter row,col (1-4), number (1-4)")
+            else:
+                print("Enter 3 numbers separated by spaces")
+        except ValueError:
+            print("Enter numbers only!")
+
+    print("\nGame Over! Solution was:")
+    print_board(solution)
+
+if __name__ == "__main__":
+    play_game()
